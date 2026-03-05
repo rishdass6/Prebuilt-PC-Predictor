@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PC Price Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f7f6f3;
+      --surface:   #ffffff;
+      --border:    #e2e0db;
+      --text:      #1a1917;
+      --muted:     #8a8680;
+      --accent:    #1a1917;
+      --accent-fg: #f7f6f3;
+      --radius:    6px;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    header p {
+      margin-top: 0.35rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .field {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+    }
+
+    select {
+      width: 100%;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238a8680' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.85rem center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .multi-select {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .multi-select select {
+      flex: 1;
+      min-width: 0;
+    }
+
+    select:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .slider-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+      min-width: 2.5rem;
+      text-align: right;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 1.75rem;
+      padding: 0.75rem;
+      background: var(--accent);
+      color: var(--accent-fg);
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    button:hover { opacity: 0.85; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .result {
+      margin-top: 1.5rem;
+      padding: 1.25rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+
+    .result.visible { display: block; }
+
+    .result-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .result-price {
+      font-family: 'DM Mono', monospace;
+      font-size: 2rem;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+    }
+
+    .result-error {
+      color: #c0392b;
+      font-size: 0.85rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <header>
+      <h1>PC Price Predictor</h1>
+      <p>Select your components to get an estimated price.</p>
+    </header>
+
+    <!-- CPU -->
+    <div class="field">
+      <label>CPU</label>
+      <div class="multi-select">
+        <select id="cpu-company" onchange="updateCpuModel()">
+          <option value="">Company</option>
+          <option>AMD</option>
+          <option>Intel</option>
+        </select>
+        <select id="cpu-model" onchange="updateCpuGen()" disabled>
+          <option value="">Model</option>
+        </select>
+        <select id="cpu-gen" disabled>
+          <option value="" disabled hidden>Gen (opt.)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- GPU -->
+    <div class="field">
+      <label>GPU</label>
+      <div class="multi-select">
+        <select id="gpu-company" onchange="updateGpuModel()">
+          <option value="">Company</option>
+          <option>AMD</option>
+          <option>Intel</option>
+          <option>NVIDIA</option>
+        </select>
+        <select id="gpu-model" onchange="updateGpuVariant()" disabled>
+          <option value="">Model</option>
+        </select>
+        <select id="gpu-variant" disabled>
+          <option value="" disabled hidden>Variant (opt.)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- RAM -->
+    <div class="field">
+      <label>RAM</label>
+      <div class="multi-select">
+        <select id="ram-size" onchange="updateRamGen()">
+          <option value="">Size</option>
+          <option>8GB</option>
+          <option>12GB</option>
+          <option>16GB</option>
+          <option>32GB</option>
+          <option>64GB</option>
+        </select>
+        <select id="ram-gen" disabled>
+          <option value="">Gen</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Storage -->
+    <div class="field">
+      <label>Storage</label>
+      <div class="multi-select">
+        <select id="storage-size" onchange="updateStorageType()">
+          <option value="">Size</option>
+          <option>240GB</option>
+          <option>256GB</option>
+          <option>500GB</option>
+          <option>512GB</option>
+          <option>1TB</option>
+          <option>2TB</option>
+          <option>3TB</option>
+          <option>4TB</option>
+          <option>5TB</option>
+          <option>8TB</option>
+        </select>
+        <select id="storage-type" disabled>
+          <option value="">Type</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="rating">Rating — <span id="rating-display">3.0</span></label>
+      <div class="slider-row">
+        <input type="range" id="rating" min="1.0" max="5.0" step="0.1" value="3.0"
+               oninput="document.getElementById('rating-display').textContent = parseFloat(this.value).toFixed(1)"/>
+        <span class="slider-value" id="rating-display-end">3.0</span>
+      </div>
+    </div>
+
+    <button id="predict-btn" onclick="predict()">Predict Price</button>
+
+    <div class="result" id="result-box">
+      <div class="result-label">Estimated Price</div>
+      <div class="result-price" id="result-price"></div>
+    </div>
+  </div>
+
+  <script>
+    // ── DATA MAPS ──────────────────────────────────────────────────────────────
+
+    const CPU_DATA = {
+      AMD: {
+        'Ryzen 3': ['3200G','4300U','5300G','5300U'],
+        'Ryzen 5': ['Base','2600','3400G','5500','5500U','5600','5600G','5600GT','5600X','6400MT','7430U','7500F','7600','7600X','7640HS','9600X'],
+        'Ryzen 7': ['Base','260','2700','3800X','5700','5700G','5700U','5700X','5800X','6800H','7700','7700X','7730U','7800X3D','8700F','8745HS','9700X','9800X3D'],
+        'Ryzen 9': ['6900HX','7900X','8945HS','9900X','9900X3D','9950X','9950X3D'],
+      },
+      Intel: {
+        'i3':      ['Base','10100','10100F','10105'],
+        'i5':      ['Base','6500','7500','8500','9400F','10400F','10500','11400F','11600KF','12400F','12600H','13400F','14400F','14450HX'],
+        'i7':      ['Base','6700','9700K','10700K','11700','12700H','13700F','13700KF','14700F','14700K','14700KF','Xeon'],
+        'i9':      ['Base','9900K','12900F','12900KF','13900F','13900KF','14900K','14900KF'],
+        'Ultra 5': ['Base'],
+        'Ultra 7': ['Base','265F','265K','265KF'],
+        'Ultra 9': ['Base','285K','286K'],
+        'Xeon E5': ['Base'],
+        'G5905':   ['Base'],
+      }
+    };
+
+    // GPU: model → valid variants (null = Base only)
+    const GPU_DATA = {
+      AMD: {
+        'RX 550': null, 'RX 560': null, 'RX 580': null, 'RX 590': null,
+        'RX 5500': null, 'RX 5700': ['XT'],
+        'RX 6400': null, 'RX 6500': ['XT'],
+        'RX 680': null, 'RX 780': null, 'RX 8060': null,
+        'RX 9060': ['XT'], 'RX 9070': ['Base','XT'],
+        'Vega 7': null, 'Vega 8': null, 'Vega 11': null, 'Vega Graphics': null,
+      },
+      Intel: {
+        'Arc B580': null,
+      },
+      NVIDIA: {
+        'GT 1030': null,
+        'GTX 750': ['Ti'], 'GTX 1050': ['Ti'],
+        'GTX 1650': ['Base','Super'], 'GTX 1660': ['Base','Super'],
+        'RTX 2060': null, 'RTX 2080': ['Super'],
+        'RTX 3050': null, 'RTX 3060': null, 'RTX 3070': null, 'RTX 3090': null,
+        'RTX 4060': ['Base','Ti'], 'RTX 4070': ['Base','Super','Ti'],
+        'RTX 4080': ['Base','Super'], 'RTX 4090': null,
+        'RTX 5050': null, 'RTX 5060': ['Base','Ti'],
+        'RTX 5070': ['Base','Ti'], 'RTX 5080': null, 'RTX 5090': null,
+      }
+    };
+
+    const RAM_DATA = {
+      '8GB':  ['DDR4'],
+      '12GB': ['DDR4'],
+      '16GB': ['DDR4','DDR5'],
+      '32GB': ['DDR4','DDR5'],
+      '64GB': ['DDR5'],
+    };
+
+    const STORAGE_DATA = {
+      '240GB': ['SSD'],
+      '256GB': ['NVMe','SSD'],
+      '500GB': ['NVMe','SSD'],
+      '512GB': ['NVMe','SSD'],
+      '1TB':   ['HDD','NVMe','SSD'],
+      '2TB':   ['HDD','NVMe','SSD'],
+      '3TB':   ['SSD'],
+      '4TB':   ['NVMe','SSD'],
+      '5TB':   ['SSD'],
+      '8TB':   ['SSD'],
+    };
+
+    // ── HELPERS ────────────────────────────────────────────────────────────────
+
+    function populate(selectId, options, placeholder, enable = true) {
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = `<option value="" disabled hidden>${placeholder}</option>`;
+      options.forEach(o => { const opt = document.createElement('option'); opt.value = o; opt.textContent = o; sel.appendChild(opt); });
+      sel.disabled = !enable;
+    }
+
+    function reset(selectId, placeholder) {
+      const sel = document.getElementById(selectId);
+      sel.innerHTML = `<option value="" disabled hidden>${placeholder}</option>`;
+      sel.disabled = true;
+    }
+
+    // ── CPU CASCADE ────────────────────────────────────────────────────────────
+
+    function updateCpuModel() {
+      const company = document.getElementById('cpu-company').value;
+      reset('cpu-model', 'Model'); reset('cpu-gen', 'Gen (opt.)');
+      if (!company) return;
+      populate('cpu-model', Object.keys(CPU_DATA[company]), 'Model');
+    }
+
+    function updateCpuGen() {
+      const company = document.getElementById('cpu-company').value;
+      const model   = document.getElementById('cpu-model').value;
+      reset('cpu-gen', 'Gen (opt.)');
+      if (!company || !model) return;
+      const gens = CPU_DATA[company][model];
+      populate('cpu-gen', gens, 'Gen (opt.)');
+    }
+
+    function getCPU() {
+      const company = document.getElementById('cpu-company').value;
+      const model   = document.getElementById('cpu-model').value;
+      const gen     = document.getElementById('cpu-gen').value;
+      if (!company || !model) return null;
+      if (!gen || gen === 'Base') return `${company} ${model}`;
+      return `${company} ${model} ${gen}`;
+    }
+
+    // ── GPU CASCADE ────────────────────────────────────────────────────────────
+
+    function updateGpuModel() {
+      const company = document.getElementById('gpu-company').value;
+      reset('gpu-model', 'Model'); reset('gpu-variant', 'Variant (opt.)');
+      if (!company) return;
+      populate('gpu-model', Object.keys(GPU_DATA[company]), 'Model');
+    }
+
+    function updateGpuVariant() {
+      const company = document.getElementById('gpu-company').value;
+      const model   = document.getElementById('gpu-model').value;
+      reset('gpu-variant', 'Variant (opt.)');
+      if (!company || !model) return;
+      const variants = GPU_DATA[company][model];
+      if (variants) populate('gpu-variant', variants, 'Variant (opt.)');
+    }
+
+    function getGPU() {
+      const company = document.getElementById('gpu-company').value;
+      const model   = document.getElementById('gpu-model').value;
+      const variant = document.getElementById('gpu-variant').value;
+      if (!company || !model) return null;
+      if (!variant || variant === 'Base') return `${company} ${model}`;
+      return `${company} ${model} ${variant}`;
+    }
+
+    // ── RAM CASCADE ────────────────────────────────────────────────────────────
+
+    function updateRamGen() {
+      const size = document.getElementById('ram-size').value;
+      reset('ram-gen', 'Gen');
+      if (!size) return;
+      populate('ram-gen', RAM_DATA[size], 'Gen');
+    }
+
+    function getRAM() {
+      const size = document.getElementById('ram-size').value;
+      const gen  = document.getElementById('ram-gen').value;
+      if (!size || !gen) return null;
+      return `${size} ${gen}`;
+    }
+
+    // ── STORAGE CASCADE ────────────────────────────────────────────────────────
+
+    function updateStorageType() {
+      const size = document.getElementById('storage-size').value;
+      reset('storage-type', 'Type');
+      if (!size) return;
+      populate('storage-type', STORAGE_DATA[size], 'Type');
+    }
+
+    function getStorage() {
+      const size = document.getElementById('storage-size').value;
+      const type = document.getElementById('storage-type').value;
+      if (!size || !type) return null;
+      return `${size} ${type}`;
+    }
+
+    // ── RATING ─────────────────────────────────────────────────────────────────
+
+    const ratingSlider = document.getElementById('rating');
+    const ratingDisplay = document.getElementById('rating-display');
+    const ratingDisplayEnd = document.getElementById('rating-display-end');
+    ratingSlider.addEventListener('input', () => {
+      const val = parseFloat(ratingSlider.value).toFixed(1);
+      ratingDisplay.textContent = val;
+      ratingDisplayEnd.textContent = val;
+    });
+
+    // ── PREDICT ────────────────────────────────────────────────────────────────
+
+    async function predict() {
+      const cpu     = getCPU();
+      const gpu     = getGPU();
+      const ram     = getRAM();
+      const storage = getStorage();
+      const rating  = parseFloat(document.getElementById('rating').value);
+
+      if (!cpu || !gpu || !ram || !storage) {
+        alert('Please complete all component selections before predicting.');
+        return;
+      }
+
+      const btn = document.getElementById('predict-btn');
+      btn.disabled = true;
+      btn.textContent = 'Predicting…';
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ CPU: cpu, GPU: gpu, RAM: ram, Storage: storage, Rating: rating })
+        });
+
+        const data = await response.json();
+        const resultBox   = document.getElementById('result-box');
+        const resultPrice = document.getElementById('result-price');
+
+        if (data.error) {
+          resultPrice.innerHTML = `<span class="result-error">Error: ${data.error}</span>`;
+        } else {
+          resultPrice.textContent = `£${data.prediction.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        resultBox.classList.add('visible');
+      } catch (err) {
+        alert('Something went wrong. Is the Flask server running?');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Predict Price';
+      }
+    }
+  </script>
+</body>
+</html>
