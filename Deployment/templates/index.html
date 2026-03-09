@@ -302,7 +302,7 @@
       </div>
     </div>
 
-    <button id="predict-btn" onclick="predict()">Predict Price</button>
+    <button id="predict-btn" onclick="predict()">Estimate Price</button>
 
     <div class="result" id="result-box">
       <div class="result-label">Estimated Price</div>
@@ -515,13 +515,13 @@
       const rating  = parseFloat(document.getElementById('rating').value);
 
       if (!cpu || !gpu || !ram || !storage) {
-        alert('Please complete all component selections before predicting.');
+        alert('Please complete all component selections before estimating.');
         return;
       }
 
       const btn = document.getElementById('predict-btn');
       btn.disabled = true;
-      btn.textContent = 'Predicting…';
+      btn.textContent = 'Estimating…';
 
       try {
         const response = await fetch('/predict', {
@@ -537,7 +537,7 @@
         if (data.error) {
           resultPrice.innerHTML = `<span class="result-error">Error: ${data.error}</span>`;
         } else {
-          resultPrice.textContent = `£${data.prediction.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+          resultPrice.textContent = `$${data.prediction.toLocaleString('en-GB', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
         }
 
         resultBox.classList.add('visible');
@@ -545,7 +545,7 @@
         alert('Something went wrong. Is the Flask server running?');
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Predict Price';
+        btn.textContent = 'Estimate Price';
       }
     }
   </script>
