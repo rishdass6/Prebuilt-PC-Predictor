@@ -4,7 +4,7 @@ import pandas as pd
 from flask import Flask, request, render_template, jsonify
 
 app = Flask(__name__)
-model = joblib.load('model.pkl')
+#model = joblib.load('model.pkl')
 
 @app.route('/')
 def home():
@@ -13,6 +13,7 @@ def home():
 @app.route('/predict', methods = ['POST'])
 def predict():
     try:
+        model = joblib.load('model.pkl')
         data = request.get_json()
 
         input_df = pd.DataFrame([{
