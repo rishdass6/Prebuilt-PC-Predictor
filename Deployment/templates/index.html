@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PC Price Estimator</title>
+  <title>PC Price Predictor</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -206,7 +206,7 @@
 <body>
   <div class="card">
     <header>
-      <h1>PC Price Estimator</h1>
+      <h1>PC Price Predictor</h1>
       <p>Select your components to get an estimated price.</p>
     </header>
 
@@ -232,6 +232,11 @@
     <div class="field">
       <label>GPU</label>
       <div class="multi-select">
+        <select id="gpu-type" onchange="updateGpuType()" style="flex:0.6">
+          <option value="" disabled hidden>Type</option>
+          <option value="discrete">Regular GPU</option>
+          <option value="integrated">Integrated</option>
+        </select>
         <select id="gpu-company" onchange="updateGpuModel()">
           <option value="">Company</option>
           <option>AMD</option>
@@ -419,6 +424,17 @@
 
     // ── GPU CASCADE ────────────────────────────────────────────────────────────
 
+    function updateGpuType() {
+      const type = document.getElementById('gpu-type').value;
+      const isDiscrete = type === 'discrete';
+      document.getElementById('gpu-company').disabled = !isDiscrete;
+      reset('gpu-model', 'Model');
+      reset('gpu-variant', 'Variant (opt.)');
+      if (!isDiscrete) {
+        document.getElementById('gpu-company').value = '';
+      }
+    }
+
     function updateGpuModel() {
       const company = document.getElementById('gpu-company').value;
       reset('gpu-model', 'Model'); reset('gpu-variant', 'Variant (opt.)');
@@ -436,6 +452,8 @@
     }
 
     function getGPU() {
+      const type    = document.getElementById('gpu-type').value;
+      if (type === 'integrated') return 'Integrated';
       const company = document.getElementById('gpu-company').value;
       const model   = document.getElementById('gpu-model').value;
       const variant = document.getElementById('gpu-variant').value;
